@@ -70,21 +70,64 @@ int main() {
   double stddev2 = calculate_standard_deviation(ratings2, mean2);
   double min2 = *std::min_element(ratings2.begin(), ratings2.end());
   double max2 = *std::max_element(ratings2.begin(), ratings2.end());
-------------------------------------------------------------------------------------------------------
-  // Sentiment analysis
+
   int posCount1 = 0, negCount1 = 0, incCount1 = 0;
+  int posCount2 = 0, negCount2 = 0, incCount2 = 0;
+
+  // Sentiment analysis for set 1
   for(const std::string& review : reviews1){
     std::string sentiment = determine_sentiment(review, positiveWords, negativeWords);
-    if (sentiment == "positive") posCount++;
-      else if (sentiment == "negative") negCount++;
-      else incCount1++;
+    if (sentiment == "positive"){
+      posCount1++;
+    }
+    else if (sentiment == "negative"){
+      negCount1++;
+    }
+    else{
+      incCount1++;
     }
   }
-  --------------------------------------------------------------------------------------------------------
-  determine_sentiment(reviews1, positiveWords, negativeWords);
 
-  int posCount2 = 0, negCount2 = 0, incCount2 = 0;
-  determine_sentiment(reviews2, positiveWords, negativeWords);
+  // Sentiment analysis for set 2
+  for(const std::string& review : reviews2){
+    std::string sentiment = determine_sentiment(review, positiveWords, negativeWords);
+    if (sentiment == "positive"){
+      posCount2++;
+    }
+    else if (sentiment == "negative"){
+      negCount2++;
+    }
+    else{
+      incCount2++;
+    }
+  }
+
+  // Find the highest and lowest-rated movies
+    std::string bestMovie1 = titles1[std::distance(ratings1.begin(), std::max_element(ratings1.begin(), ratings1.end()))];
+    std::string bestMovie2 = titles2[std::distance(ratings2.begin(), std::max_element(ratings2.begin(), ratings2.end()))];
+
+    std::string worstMovie1 = titles1[std::distance(ratings1.begin(), std::min_element(ratings1.begin(), ratings1.end()))];
+    std::string worstMovie2 = titles2[std::distance(ratings2.begin(), std::min_element(ratings2.begin(), ratings2.end()))];
+
+    // Display the results
+    std::cout << std::fixed << std::setprecision(2);
+    std::cout << std::left;
+
+    std::cout << std::setw(16) << "" << std::setw(16) << "Set 1" << std::setw(15) << "Set 2" << std::endl;
+    std::cout << std::string(48, '-') << std::endl;  // Separator line
+
+    std::cout << std::setw(16) << "Count:" << std::setw(16) << ratings1.size() << std::setw(15) << ratings2.size() << std::endl;
+    std::cout << std::setw(16) << "Mean:" << std::setw(16) << mean1 << std::setw(15) << mean2 << std::endl;
+    std::cout << std::setw(16) << "STDV:" << std::setw(16) << stddev1 << std::setw(15) << stddev2 << std::endl;
+    std::cout << std::setw(16) << "Min:" << std::setw(16) << min1 << std::setw(15) << min2 << std::endl;
+    std::cout << std::setw(16) << "Max:" << std::setw(16) << max1 << std::setw(15) << max2 << std::endl;
+    std::cout << std::setw(16) << "Pos:" << std::setw(16) << posCount1 << std::setw(15) << posCount2 << std::endl;
+    std::cout << std::setw(16) << "Neg:" << std::setw(16) << negCount1 << std::setw(15) << negCount2 << std::endl;
+    std::cout << std::setw(16) << "Inc:" << std::setw(16) << incCount1 << std::setw(15) << incCount2 << std::endl;
+
+    // Best and Worst Titles
+    std::cout << "Overall Best Title: " << bestMovie1 << std::endl;
+    std::cout << "Overall Worst Title: " << worstMovie1 << std::endl;
 
   /////////////////////////////////////////////////////////////////
 
@@ -167,25 +210,25 @@ double calculate_standard_deviation(const std::vector<double>& ratings, double m
 
 int count_words(const std::string& review, const std::vector<std::string>& words) {
     int count = 0;
+    std::string lowerReview = review;
+    std::transform(lowerReview.begin(), lowerReview.end(), lowerReview.begin(), ::tolower);
     for (const std::string& word : words) {
-        size_t pos = review.find(word);
+        std::string lowerWord = word;
+        std::transform(lowerWord.begin(), lowerWord.end(), lowerWord.begin(), ::tolower);
+        size_t pos = lowerReview.find(lowerWord);
         while (pos != std::string::npos) {
             count++;
-            pos = review.find(word, pos + word.length());
+            pos = lowerReview.find(lowerWord, pos + lowerWord.length());
         }
     }
     return count;
 }
 
-std::string determine_sentiment(const std::vector<std::string>& reviews, 
+std::string determine_sentiment(const std::string& review, 
                               const std::vector<std::string>& positiveWords, 
                               const std::vector<std::string>& negativeWords) {
-    std::string result = std::accumulate(reviews.begin() + 1, reviews.end(), reviews[0],
-        [](const std::string& a, const std::string& b){
-          return a + "," + b;
-        });
-    int posCount = count_words(result, positiveWords);
-    int negCount = count_words(result, negativeWords);
+    int posCount = count_words(review, positiveWords);
+    int negCount = count_words(review, negativeWords);
 
     if (posCount > negCount) {
       return "positive";
