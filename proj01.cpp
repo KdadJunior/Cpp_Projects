@@ -6,6 +6,11 @@
 
 //////////////////////////// Your Code //////////////////////////
 
+#include <cmath>
+#include <iomanip>
+#include <algorithm>
+#include <numeric>
+
 /////////////////////////////////////////////////////////////////
 
 void load_dictionary(const std::string &filename,
@@ -16,6 +21,13 @@ void load_dataset(const std::string &filename, std::vector<std::string> &titles,
                   std::vector<std::string> &reviews);
 
 //////////////////////////// Your Code //////////////////////////
+
+double calculate_mean(const std::vector<double>& ratings);
+double calculate_standard_deviation(const std::vector<double>& ratings, double mean);
+int count_words(const std::string& review, const std::vector<std::string>& words);
+std::string determine_sentiment(const std::string& review, 
+                              const std::vector<std::string>& positiveWords, 
+                              const std::vector<std::string>& negativeWords);
 
 /////////////////////////////////////////////////////////////////
 
@@ -40,6 +52,39 @@ int main() {
   load_dataset(dataset2_path, titles2, years2, ratings2, reviews2);
 
   //////////////////////////// Your Code //////////////////////////
+
+  // Handle empty dataset case
+  if (ratings1.empty() || ratings2.empty()) {
+    std::cerr << "Error: One or both datasets are empty. Exiting program." << std::endl;
+      return 1;
+    }
+
+  // Compute statistics for Set 1
+  double mean1 = calculate_mean(ratings1);
+  double stddev1 = calculate_standard_deviation(ratings1, mean1);
+  double min1 = *std::min_element(ratings1.begin(), ratings1.end());
+  double max1 = *std::max_element(ratings1.begin(), ratings1.end());
+
+  // Compute statistics for Set 2
+  double mean2 = calculate_mean(ratings2);
+  double stddev2 = calculate_standard_deviation(ratings2, mean2);
+  double min2 = *std::min_element(ratings2.begin(), ratings2.end());
+  double max2 = *std::max_element(ratings2.begin(), ratings2.end());
+------------------------------------------------------------------------------------------------------
+  // Sentiment analysis
+  int posCount1 = 0, negCount1 = 0, incCount1 = 0;
+  for(const std::string& review : reviews1){
+    std::string sentiment = determine_sentiment(review, positiveWords, negativeWords);
+    if (sentiment == "positive") posCount++;
+      else if (sentiment == "negative") negCount++;
+      else incCount1++;
+    }
+  }
+  --------------------------------------------------------------------------------------------------------
+  determine_sentiment(reviews1, positiveWords, negativeWords);
+
+  int posCount2 = 0, negCount2 = 0, incCount2 = 0;
+  determine_sentiment(reviews2, positiveWords, negativeWords);
 
   /////////////////////////////////////////////////////////////////
 
@@ -83,17 +128,17 @@ void load_dataset(const std::string &filename, std::vector<std::string> &titles,
   std::string line, title, review;
   int year;
   double rating;
-  std::string temp;  // Skip the first line of the datasets (headers)
-  getline(file, line);
-  while (getline(file, line)) {
+  std::string temp;
+  std::getline(file, line); // Skip the first line of the datasets (headers)
+  while (std::getline(file, line)) {
     std::stringstream ss(line);
 
-    getline(ss, title, ',');
-    getline(ss, temp, ',');
+    std::getline(ss, title, ',');
+    std::getline(ss, temp, ',');
     year = std::stoi(temp);
-    getline(ss, temp, ',');
+    std::getline(ss, temp, ',');
     rating = std::stod(temp);
-    getline(ss, review);
+    std::getline(ss, review);
     titles.push_back(title);
     years.push_back(year);
     ratings.push_back(rating);
@@ -103,5 +148,52 @@ void load_dataset(const std::string &filename, std::vector<std::string> &titles,
 }
 
 //////////////////////////// Your Code //////////////////////////
+
+double calculate_mean(const std::vector<double>& ratings) {
+    double sum = 0.0;
+    for (double rating : ratings){
+      sum += rating;
+    }
+    return sum / ratings.size();
+}
+
+double calculate_standard_deviation(const std::vector<double>& ratings, double mean) {
+    double variance = 0;
+    for (double rating : ratings){
+      variance += (rating - mean) * (rating - mean);
+    }
+    return sqrt(variance / ratings.size());
+}
+
+int count_words(const std::string& review, const std::vector<std::string>& words) {
+    int count = 0;
+    for (const std::string& word : words) {
+        size_t pos = review.find(word);
+        while (pos != std::string::npos) {
+            count++;
+            pos = review.find(word, pos + word.length());
+        }
+    }
+    return count;
+}
+
+std::string determine_sentiment(const std::vector<std::string>& reviews, 
+                              const std::vector<std::string>& positiveWords, 
+                              const std::vector<std::string>& negativeWords) {
+    std::string result = std::accumulate(reviews.begin() + 1, reviews.end(), reviews[0],
+        [](const std::string& a, const std::string& b){
+          return a + "," + b;
+        });
+    int posCount = count_words(result, positiveWords);
+    int negCount = count_words(result, negativeWords);
+
+    if (posCount > negCount) {
+      return "positive";
+    } else if (negCount > posCount) {
+      return "negative";
+    } else {
+      return "inconclusive";
+    }
+}
 
 /////////////////////////////////////////////////////////////////
