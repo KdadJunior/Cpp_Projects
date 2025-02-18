@@ -42,6 +42,12 @@ int main() {
   std::vector<std::string> positiveWords, negativeWords;
   load_dictionary(dictionary_path, positiveWords, negativeWords);
 
+  // Check if dictionary is empty
+  if (positiveWords.empty() && negativeWords.empty()) {
+    std::cerr << "Error: Dictionary file is empty. Exiting program." << std::endl;
+    return 1;
+  }
+
   // Load the datasets
   std::vector<std::string> titles1, titles2;
   std::vector<int> years1, years2;
@@ -102,12 +108,35 @@ int main() {
     }
   }
 
-  // Find the highest and lowest-rated movies
-    std::string bestMovie1 = titles1[std::distance(ratings1.begin(), std::max_element(ratings1.begin(), ratings1.end()))];
-    std::string bestMovie2 = titles2[std::distance(ratings2.begin(), std::max_element(ratings2.begin(), ratings2.end()))];
+  // Determine Overall Best Title(s)
+  double highestRating = std::max(max1, max2);
+  std::vector<std::string> bestMovies;
+  
+  for (size_t i = 0; i < ratings1.size(); ++i) {
+      if (ratings1[i] == highestRating) {
+          bestMovies.push_back(titles1[i]);
+      }
+  }
+  for (size_t i = 0; i < ratings2.size(); ++i) {
+      if (ratings2[i] == highestRating) {
+          bestMovies.push_back(titles2[i]);
+      }
+  }
 
-    std::string worstMovie1 = titles1[std::distance(ratings1.begin(), std::min_element(ratings1.begin(), ratings1.end()))];
-    std::string worstMovie2 = titles2[std::distance(ratings2.begin(), std::min_element(ratings2.begin(), ratings2.end()))];
+  // Determine Overall Worst Title(s)
+  double lowestRating = std::min(min1, min2);
+  std::vector<std::string> worstMovies;
+  
+  for (size_t i = 0; i < ratings1.size(); ++i) {
+      if (ratings1[i] == lowestRating) {
+          worstMovies.push_back(titles1[i]);
+      }
+  }
+  for (size_t i = 0; i < ratings2.size(); ++i) {
+      if (ratings2[i] == lowestRating) {
+          worstMovies.push_back(titles2[i]);
+      }
+  }
 
     // Display the results
     std::cout << std::fixed << std::setprecision(2);
@@ -125,9 +154,21 @@ int main() {
     std::cout << std::setw(16) << "Neg:" << std::setw(16) << negCount1 << std::setw(15) << negCount2 << std::endl;
     std::cout << std::setw(16) << "Inc:" << std::setw(16) << incCount1 << std::setw(15) << incCount2 << std::endl;
 
-    // Best and Worst Titles
-    std::cout << "Overall Best Title: " << bestMovie1 << std::endl;
-    std::cout << "Overall Worst Title: " << worstMovie1 << std::endl;
+    // Display Overall Best Titles (Handling Ties)
+  std::cout << "Overall Best Title: ";
+  for (size_t i = 0; i < bestMovies.size(); ++i) {
+      if (i > 0) std::cout << ", ";
+      std::cout << bestMovies[i];
+  }
+  std::cout << std::endl;
+
+  // Display Overall Worst Titles (Handling Ties)
+  std::cout << "Overall Worst Title: ";
+  for (size_t i = 0; i < worstMovies.size(); ++i) {
+      if (i > 0) std::cout << ", ";
+      std::cout << worstMovies[i];
+  }
+  std::cout << std::endl;
 
   /////////////////////////////////////////////////////////////////
 
@@ -176,12 +217,25 @@ void load_dataset(const std::string &filename, std::vector<std::string> &titles,
   while (std::getline(file, line)) {
     std::stringstream ss(line);
 
-    std::getline(ss, title, ',');
-    std::getline(ss, temp, ',');
-    year = std::stoi(temp);
-    std::getline(ss, temp, ',');
-    rating = std::stod(temp);
-    std::getline(ss, review);
+    // Check if the line is malformed (missing fields)
+    if (!std::getline(ss, title, ',') ||
+        !std::getline(ss, temp, ',') ||
+        !std::getline(ss, temp, ',') ||
+        !std::getline(ss, review)) {
+        std::cerr << "Warning: Malformed line in dataset. Skipping." << std::endl;
+        continue;
+    }
+
+    // Handle invalid year or rating
+    try {
+        year = std::stoi(temp);
+        rating = std::stod(temp);
+    } catch (const std::invalid_argument& e) {
+        std::cerr << "Warning: Invalid year or rating. Skipping line." << std::endl;
+        continue;
+    }
+
+    // Add valid data to vectors
     titles.push_back(title);
     years.push_back(year);
     ratings.push_back(rating);
